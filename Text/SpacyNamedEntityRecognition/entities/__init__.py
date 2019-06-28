@@ -5,38 +5,37 @@ import json
 from spacy import displacy
 from spacy.lang.nl.examples import sentences
 
-# Load all Spacy models in memory, instead of during runtime
-nlp_en = spacy.load("en_core_web_sm")
-nlp_nl = spacy.load("nl_core_news_sm")
+# Cache all Spacy models in memory
+# https://docs.microsoft.com/en-us/azure/azure-functions/functions-reference-python?view=aspnetcore-2.2#global-variables
+SPACY_EN = None
+SPACY_NL = None
 
-# Endpoint /
-
+supported_languages = {
+    'en': 'en_core_web_sm',
+    'nl': 'nl_core_news_sm',
+}
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
-    text = req.params.get('text')
-    lang = req.params.get('lang')
 
-    if not text:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            text = req_body.get('text')
+    # Load settings
+    default_language = list(supported_languages)[0]
 
-    if not lang:
-        try:
-            req_body = req.get_json()
-        except ValueError:
-            pass
-        else:
-            lang = req_body.get('lang')
+    text = get_parameter(req, 'text')
+    categories = get_parameter(req, 'categories', [])
+    language = get_parameter(req, 'languageCode', default_language)
 
-    if not lang:
-        lang = "nl"
+    # Check if language is supported
+    if language not in supported_languages:
+        return
 
-    # doc = nlp(text)
-    doc = extract_from_text(text, lang)
+    # Load Spacy Model if not in memory
+    model_name = ('spacy_' + language).upper()
+    model = globals()[model_name]
+
+    if model is None:
+        globals()[model_name] = spacy.load(supported_languages[language])
+
+    doc = extract_from_text(text, model_name)
 
     # TODO Multiple endpoint and format result as LUIS
     if text:
@@ -53,16 +52,29 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         )
 
 
-def extract_from_text(text: str, lang: str):
-    """Extract Spacy Named Entities from raw text"""
-    if lang == "en":
-        nlp = nlp_en
-    else:
-        nlp = nlp_nl
+def get_parameter(req: func.HttpRequest, param: str, default: object = None):
 
-    entities = []
+    value = req.params.get(param)
+
+    if not value:
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            pass
+        else:
+            value = req_body.get(param)
     
-    doc = nlp(u"Apple is looking at buying U.K. startup for $1 billion")
+    if not value:
+        value = default
+
+    return value
+
+def extract_from_text(text: str, model_name: str):
+    """Extract Spacy Named Entities from raw text"""
+    nlp = globals()[model_name]
+    entities = []
+
+    doc = nlp(text)
 
     for ent in doc.ents:
         print(ent.text, ent.start_char, ent.end_char, ent.label_)

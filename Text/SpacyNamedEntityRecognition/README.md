@@ -2,14 +2,16 @@
 
 >spaCy features an extremely fast statistical entity recognition system, that assigns labels to contiguous spans of tokens. The default model identifies a variety of named and numeric entities, including companies, locations, organizations and products. You can add arbitrary classes to the entity recognition system, and update the model with new examples.
 
-This custom skill utilizes Spacy. It has been modelled against the built-in [Entity Recognition cognitive skill
+This custom skill utilizes Spacy entity recognition system. It has been modelled against the built-in [Entity Recognition cognitive skill
 ](https://docs.microsoft.com/en-us/azure/search/cognitive-search-skill-entity-recognition).
 
 [![Deploy to Azure](https://azuredeploy.net/deploybutton.svg)](https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure-Samples%2Fazure-search-power-skills%2Fmaster%2FText%2FSpacyNamedEntityRecognition%2Fazuredeploy.json)
 
 ## Requirements
 (TODO: Python Azure function)
-
+python -m spacy download en_core_web_sm
+python -m spacy download nl_core_news_sm
+how tu use on Serverless?
 
 # SpacyNamedEntityRecognition Skill
 
